@@ -18,6 +18,6 @@ model Videos {
   name   String
   size   BigInt
   path   String @unique
-  user   Users  @relation(fields: [userId], references: [id])
+  user   Users  @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId String
 }
