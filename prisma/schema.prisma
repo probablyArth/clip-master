@@ -1,0 +1,23 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Users {
+  id      String   @id @default(uuid())
+  api_key String?  @unique
+  videos  Videos[]
+}
+
+model Videos {
+  id     String @id @default(uuid())
+  name   String
+  size   String
+  path   String @unique
+  user   Users  @relation(fields: [userId], references: [id])
+  userId String
+}
