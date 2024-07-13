@@ -15,6 +15,21 @@ import { trimVideo } from 'utils/ffmpeg';
 
 const VideosRouter = Router();
 
+VideosRouter.get('/', async (req, res, next) => {
+  try {
+    const videos = await prismaClient.videos.findMany({
+      where: {
+        userId: req.user.id,
+      },
+    });
+    res.setHeader('Content-Type', 'application/json');
+    return res.send(JSON.stringify(videos, (_, v) => (typeof v === 'bigint' ? v.toString() : v)));
+  } catch (e) {
+    console.log(e);
+    next(new InternalServerError());
+  }
+});
+
 const GETdownloadParams = z.object({ videoId: z.string() });
 type GETdownloadParamsT = z.infer<typeof GETdownloadParams>;
 VideosRouter.get('/download/:videoId', validateRequestParams(GETdownloadParams), async (req, res, next) => {
