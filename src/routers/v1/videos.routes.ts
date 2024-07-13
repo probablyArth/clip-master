@@ -74,24 +74,33 @@ VideosRouter.post(
       if (!file) {
         return next(new FileValidationError('File Not Found'));
       }
-      const successObj = { ok: false };
-      ffmpeg({ source: file.path }).ffprobe(async (err, data) => {
-        if (err) {
-          await unlink(file.path);
-          return next(new FileValidationError('Invalid file type'));
-        }
-        const duration = data.format.duration as number;
-        if ((duration as number) > StorageConfig.maxVideoDuration) {
-          await unlink(file.path);
-          return next(new FileValidationError('Video too long'));
-        }
-        if ((duration as number) < StorageConfig.minVideoDuration) {
-          await unlink(file.path);
-          return next(new FileValidationError('Video too short'));
-        }
-        successObj.ok = true;
-      });
-      if (!successObj.ok) return;
+
+      const validateFile = () => {
+        return new Promise((resolve, reject) => {
+          ffmpeg({ source: file.path }).ffprobe(async (err, data) => {
+            if (err) {
+              await unlink(file.path);
+              return reject(new FileValidationError('Invalid file type'));
+            }
+            const duration = data.format.duration as number;
+            if (duration > StorageConfig.maxVideoDuration) {
+              await unlink(file.path);
+              return reject(new FileValidationError('Video too long'));
+            }
+            if (duration < StorageConfig.minVideoDuration) {
+              await unlink(file.path);
+              return reject(new FileValidationError('Video too short'));
+            }
+            resolve(true);
+          });
+        });
+      };
+
+      try {
+        await validateFile();
+      } catch (error) {
+        return next(error);
+      }
 
       const path = StorageConfig.relativeFileLocation(req.user.id, file.filename);
       await prismaClient.videos.create({

@@ -18,7 +18,10 @@
       "env/*": ["env/*"],
       "apps/*": ["apps/*"],
       "middlewares/*": ["middlewares/*"],
-      "routers/*": ["routers/*"]
+      "routers/*": ["routers/*"],
+      "validators/*": ["validators/*"],
+      "errors/*": ["errors/*"],
+      "config/*": ["config/*"]
     }
   },
   "ts-node": { "files": true, "require": ["tsconfig-paths/register"] },
