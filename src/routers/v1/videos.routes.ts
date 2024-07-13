@@ -7,8 +7,8 @@ import { validateRequestParams } from 'validators/validateRequest';
 import { z } from 'zod';
 import multer from 'multer';
 import StorageConfig from 'config/storage.config';
-import { NotFoundError } from 'errors/not-found-error';
 import { mkdir } from 'fs/promises';
+import { FileValidationError } from 'errors/file-validation-error';
 
 const VideosRouter = Router();
 
@@ -32,7 +32,7 @@ VideosRouter.get('/download/:videoId', validateRequestParams(GETdownloadParams),
       return;
     }
 
-    res.sendFile(`${getEnvVar('STORAGE_PATH')}/${video.path}`);
+    res.download(`${getEnvVar('STORAGE_PATH')}/${video.path}`);
   } catch (e) {
     next(new InternalServerError());
   }
@@ -57,8 +57,11 @@ VideosRouter.post(
     storage,
     limits: { fileSize: StorageConfig.fileSize, files: 1, fields: 0 },
     fileFilter(_, file, callback) {
+      if (file.size > StorageConfig.fileSize) {
+        return callback(new FileValidationError('File too large'));
+      }
       if (!file.mimetype.startsWith('video/')) {
-        return callback(new Error('Invalid file type'));
+        return callback(new FileValidationError('Invalid file type'));
       }
       callback(null, true);
     },
@@ -68,7 +71,7 @@ VideosRouter.post(
       // eslint-disable-next-line no-undef
       const file = req.file as Express.Multer.File;
       if (!file) {
-        return next(new NotFoundError());
+        return next(new FileValidationError('File Not Found'));
       }
       const path = StorageConfig.relativeFileLocation(req.user.id, file.filename);
       await prismaClient.videos.create({
