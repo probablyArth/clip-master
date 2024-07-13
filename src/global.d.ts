@@ -3,7 +3,11 @@ import { Users } from '@prisma/client';
 declare global {
   namespace Express {
     interface Request {
-      user: Users;
+      user: {
+        _count: {
+          videos: number;
+        };
+      } & Users;
     }
   }
 }

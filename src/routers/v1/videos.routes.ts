@@ -12,6 +12,7 @@ import { BadRequestError } from 'errors/file-validation-error';
 import ffmpeg from 'fluent-ffmpeg';
 import { NotFoundError } from 'errors/not-found-error';
 import { trimVideo } from 'utils/ffmpeg';
+import { PlanLimitError } from 'errors/plan-limit-error';
 
 const VideosRouter = Router();
 
@@ -59,6 +60,9 @@ VideosRouter.get('/download/:videoId', validateRequestParams(GETdownloadParams),
 const storage = multer.diskStorage({
   async destination(req, _, cb) {
     const userId = req.user.id;
+    if (req.user._count.videos >= req.user.limit) {
+      return cb(new BadRequestError(`${req.user.limit}`), '');
+    }
     const fileLocation = StorageConfig.fileLocation(userId);
     await mkdir(fileLocation, { recursive: true });
 
@@ -183,6 +187,9 @@ VideosRouter.post('/trim', validateRequestBody(POSTtrimParams), async (req, res,
     }
     if (video.userId !== req.user.id) {
       return next(new ForbiddenError());
+    }
+    if (req.user._count.videos >= req.user.limit) {
+      return next(new PlanLimitError(`${req.user.limit}`));
     }
     let startTrim = 0;
     let endTrim = video.duration;

@@ -18,6 +18,13 @@ const authenticationMiddleware = () => async (req: Request, res: Response, next:
       where: {
         api_key: token,
       },
+      include: {
+        _count: {
+          select: {
+            videos: true,
+          },
+        },
+      },
     });
 
     if (!user) {
@@ -26,7 +33,7 @@ const authenticationMiddleware = () => async (req: Request, res: Response, next:
 
     req.user = user;
     next();
-  } catch (error) {
+  } catch (_) {
     return res.status(401).json({ message: 'Invalid token' });
   }
 };

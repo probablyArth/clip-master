@@ -9,8 +9,10 @@ datasource db {
 
 model Users {
   id      String   @id @default(uuid())
+  name    String
   api_key String?  @unique
   videos  Videos[]
+  limit   Int
 }
 
 model Videos {

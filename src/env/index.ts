@@ -5,6 +5,7 @@ const envSchema = z.object({
   PORT: z.string(),
   STORAGE_PATH: z.string(),
   DATABASE_URL: z.string(),
+  ADMIN_KEY: z.string(),
 });
 
 export const parseEnv = (): void => {
