@@ -15,9 +15,25 @@ module.exports = {
     '@typescript-eslint/no-unused-vars': [
       'error',
       {
+        args: 'all',
         argsIgnorePattern: '^_',
-        varsIgnorePattern: '^_',
+        caughtErrors: 'all',
         caughtErrorsIgnorePattern: '^_',
+        destructuredArrayIgnorePattern: '^_',
+        varsIgnorePattern: '^_',
+        ignoreRestSiblings: true,
+      },
+    ],
+    'no-unused-vars': [
+      'error',
+      {
+        args: 'all',
+        argsIgnorePattern: '^_',
+        caughtErrors: 'all',
+        caughtErrorsIgnorePattern: '^_',
+        destructuredArrayIgnorePattern: '^_',
+        varsIgnorePattern: '^_',
+        ignoreRestSiblings: true,
       },
     ],
     '@typescript-eslint/no-unused-expressions': 'error',
@@ -28,7 +44,6 @@ module.exports = {
     'space-in-parens': 'error',
     'no-multiple-empty-lines': 'error',
     'prefer-const': 'error',
-    quotes: [2, 'single', { avoidEscape: true }],
   },
   overrides: [
     {

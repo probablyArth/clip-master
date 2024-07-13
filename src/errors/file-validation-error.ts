@@ -4,7 +4,7 @@ export class FileValidationError extends CustomError {
   statusCode = 400;
 
   constructor(public error: string) {
-    super('Invalid file');
+    super(`Invalid file: ${error}`);
     Object.setPrototypeOf(this, FileValidationError.prototype);
   }
 

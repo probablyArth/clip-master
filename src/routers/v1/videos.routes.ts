@@ -7,8 +7,9 @@ import { validateRequestParams } from 'validators/validateRequest';
 import { z } from 'zod';
 import multer from 'multer';
 import StorageConfig from 'config/storage.config';
-import { mkdir } from 'fs/promises';
+import { mkdir, unlink } from 'fs/promises';
 import { FileValidationError } from 'errors/file-validation-error';
+import ffmpeg from 'fluent-ffmpeg';
 
 const VideosRouter = Router();
 
@@ -33,7 +34,7 @@ VideosRouter.get('/download/:videoId', validateRequestParams(GETdownloadParams),
     }
 
     res.download(`${getEnvVar('STORAGE_PATH')}/${video.path}`);
-  } catch (e) {
+  } catch (_) {
     next(new InternalServerError());
   }
 });
@@ -55,9 +56,9 @@ VideosRouter.post(
   '/upload',
   multer({
     storage,
-    limits: { fileSize: StorageConfig.fileSize, files: 1, fields: 0 },
+    limits: { fileSize: StorageConfig.maxFileSize, files: 1, fields: 0 },
     fileFilter(_, file, callback) {
-      if (file.size > StorageConfig.fileSize) {
+      if (file.size > StorageConfig.maxFileSize) {
         return callback(new FileValidationError('File too large'));
       }
       if (!file.mimetype.startsWith('video/')) {
@@ -73,6 +74,25 @@ VideosRouter.post(
       if (!file) {
         return next(new FileValidationError('File Not Found'));
       }
+      const successObj = { ok: false };
+      ffmpeg({ source: file.path }).ffprobe(async (err, data) => {
+        if (err) {
+          await unlink(file.path);
+          return next(new FileValidationError('Invalid file type'));
+        }
+        const duration = data.format.duration as number;
+        if ((duration as number) > StorageConfig.maxVideoDuration) {
+          await unlink(file.path);
+          return next(new FileValidationError('Video too long'));
+        }
+        if ((duration as number) < StorageConfig.minVideoDuration) {
+          await unlink(file.path);
+          return next(new FileValidationError('Video too short'));
+        }
+        successObj.ok = true;
+      });
+      if (!successObj.ok) return;
+
       const path = StorageConfig.relativeFileLocation(req.user.id, file.filename);
       await prismaClient.videos.create({
         data: {
@@ -83,10 +103,12 @@ VideosRouter.post(
         },
       });
       res.sendStatus(201);
-    } catch (e) {
+    } catch (_) {
       next(new InternalServerError());
     }
   },
 );
+
+VideosRouter.post('/trim');
 
 export default VideosRouter;
