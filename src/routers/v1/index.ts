@@ -10,6 +10,6 @@ const v1Router = Router();
 v1Router.use(authenticationMiddleware());
 v1Router.use('/videos', VideosRouter);
 v1Router.use('/users', UsersRouter);
-v1Router.use('/admin', isAdminMiddleware(), AdminsRouter);
+v1Router.use('/admins', isAdminMiddleware(), AdminsRouter);
 
 export default v1Router;
