@@ -14,10 +14,12 @@ model Users {
 }
 
 model Videos {
-  id     String @id @default(uuid())
-  name   String
-  size   BigInt
-  path   String @unique
-  user   Users  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId String
+  id            String @id @default(uuid())
+  name          String
+  original_name String
+  size          BigInt
+  path          String @unique
+  duration      Int
+  user          Users  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId        String
 }
