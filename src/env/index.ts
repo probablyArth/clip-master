@@ -3,6 +3,7 @@ import { config } from 'dotenv';
 
 const envSchema = z.object({
   PORT: z.string(),
+  STORAGE_PATH: z.string(),
 });
 
 export const parseEnv = (): void => {
