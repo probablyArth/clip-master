@@ -138,6 +138,33 @@ VideosRouter.post(
   },
 );
 
+const DELETEdownloadParams = z.object({ videoId: z.string() });
+type DELETEdownloadParamsT = z.infer<typeof DELETEdownloadParams>;
+VideosRouter.delete('/:videoId', async (req, res, next) => {
+  try {
+    const { videoId } = req.params as DELETEdownloadParamsT;
+    const video = await prismaClient.videos.findUnique({
+      where: {
+        id: videoId,
+      },
+    });
+    if (!video) {
+      return next(new NotFoundError());
+    }
+    if (video.userId !== req.user.id) {
+      return next(new ForbiddenError());
+    }
+    await prismaClient.videos.delete({
+      where: {
+        id: videoId,
+      },
+    });
+    res.sendStatus(204);
+  } catch (_) {
+    next(new InternalServerError());
+  }
+});
+
 const POSTtrimParams = z.object({ start: z.union([z.number(), z.undefined()]), end: z.union([z.number(), z.undefined()]), videoId: z.string() });
 type POSTtrimParamsT = z.infer<typeof POSTtrimParams>;
 VideosRouter.post('/trim', validateRequestBody(POSTtrimParams), async (req, res, next) => {
