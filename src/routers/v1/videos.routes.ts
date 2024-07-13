@@ -161,6 +161,9 @@ VideosRouter.post('/trim', validateRequestBody(POSTtrimParams), async (req, res,
         return next(new BadRequestError('start must be less than end'));
       }
     }
+    if (endTrim - startTrim < StorageConfig.minVideoDuration) {
+      return next(new BadRequestError('Trimmed video too short'));
+    }
     const inputPath = `${getEnvVar('STORAGE_PATH')}/${video.path}`;
     const newVideoName = Date.now() + '-' + video.original_name;
     const outputPath = StorageConfig.fileLocation(req.user.id) + newVideoName;
