@@ -13,6 +13,7 @@ import ffmpeg from 'fluent-ffmpeg';
 import { NotFoundError } from 'errors/not-found-error';
 import { trimVideo } from 'utils/ffmpeg';
 import { PlanLimitError } from 'errors/plan-limit-error';
+import { Videos } from '@prisma/client';
 
 const VideosRouter = Router();
 
@@ -97,22 +98,22 @@ VideosRouter.post(
       }
 
       const validateFile = () => {
-        return new Promise((resolve: (data: { duration: number }) => void, reject) => {
+        return new Promise((respect: (data: { duration: number }) => void, disrespect) => {
           ffmpeg({ source: file.path }).ffprobe(async (err, data) => {
             if (err) {
               await unlink(file.path);
-              return reject(new BadRequestError('Invalid file type'));
+              return disrespect(new BadRequestError('Invalid file type'));
             }
             const duration = data.format.duration as number;
             if (duration > StorageConfig.maxVideoDuration) {
               await unlink(file.path);
-              return reject(new BadRequestError('Video too long'));
+              return disrespect(new BadRequestError('Video too long'));
             }
             if (duration < StorageConfig.minVideoDuration) {
               await unlink(file.path);
-              return reject(new BadRequestError('Video too short'));
+              return disrespect(new BadRequestError('Video too short'));
             }
-            resolve({ duration });
+            respect({ duration });
           });
         });
       };
@@ -226,6 +227,61 @@ VideosRouter.post('/trim', validateRequestBody(POSTtrimParams), async (req, res,
         path: StorageConfig.relativeFileLocation(req.user.id, newVideoName),
         size: newVideoSize,
         userId: req.user.id,
+      },
+    });
+    res.redirect(`/api/v1/videos/download/${newVideo.id}`);
+  } catch (_) {
+    next(new InternalServerError());
+  }
+});
+
+const POSTmergeBody = z.object({ videoIds: z.array(z.string()) });
+type POSTmergeBodyT = z.infer<typeof POSTmergeBody>;
+VideosRouter.post('/merge', validateRequestBody(POSTmergeBody), async (req, res, next) => {
+  try {
+    const { videoIds } = req.body as POSTmergeBodyT;
+    if (new Set(videoIds).size !== videoIds.length) {
+      return next(new BadRequestError('Duplicate video ids'));
+    }
+    const videos: Videos[] = [];
+    let totalDuration = 0;
+    for (const videoId of videoIds) {
+      const video = await prismaClient.videos.findUnique({
+        where: {
+          id: videoId,
+        },
+      });
+      if (!video) {
+        return next(new BadRequestError(`Invalid videoId: ${videoId}`));
+      }
+      if (video.userId !== req.user.id) {
+        return next(new ForbiddenError());
+      }
+      totalDuration += video.duration;
+      videos.push(video);
+    }
+
+    if (totalDuration > StorageConfig.maxVideoDuration) {
+      return next(new BadRequestError('Total duration too long'));
+    }
+    let mergedVideo = ffmpeg();
+    videos.forEach((video) => {
+      mergedVideo = mergedVideo.addInput(`${getEnvVar('STORAGE_PATH')}/${video.path}`);
+    });
+    const mergedVideoFileName = Date.now() + '-merged.mp4';
+    const mergedVideoLocation = StorageConfig.fileLocation(req.user.id) + mergedVideoFileName;
+    await new Promise((respect, disrespect) => {
+      mergedVideo.on('error', disrespect).on('end', respect).mergeToFile(mergedVideoLocation, '/tmp/');
+    });
+    const mergedVideoSize = (await stat(mergedVideoLocation)).size;
+    const newVideo = await prismaClient.videos.create({
+      data: {
+        duration: totalDuration,
+        name: mergedVideoFileName,
+        original_name: mergedVideoFileName,
+        userId: req.user.id,
+        path: StorageConfig.relativeFileLocation(req.user.id, mergedVideoFileName),
+        size: mergedVideoSize,
       },
     });
     res.redirect(`/api/v1/videos/download/${newVideo.id}`);
