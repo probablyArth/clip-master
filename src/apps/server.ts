@@ -7,7 +7,7 @@ const expressApp = Express();
 
 expressApp.use(logger());
 expressApp.use(Express.json());
-
+expressApp.use(Express.static('public'));
 expressApp.use('/api/v1', v1Router, error());
 
 expressApp.get('/health', (_, res) => {

@@ -218,7 +218,7 @@ VideosRouter.post('/trim', validateRequestBody(POSTtrimParams), async (req, res,
     const outputPath = StorageConfig.fileLocation(req.user.id) + newVideoName;
     await trimVideo({ inputPath, outputPath, start: startTrim, end: endTrim });
     const newVideoSize = (await stat(outputPath)).size;
-    await prismaClient.videos.create({
+    const newVideo = await prismaClient.videos.create({
       data: {
         duration: endTrim - startTrim,
         name: newVideoName,
@@ -228,7 +228,7 @@ VideosRouter.post('/trim', validateRequestBody(POSTtrimParams), async (req, res,
         userId: req.user.id,
       },
     });
-    res.sendStatus(201);
+    res.redirect(`/api/v1/videos/download/${newVideo.id}`);
   } catch (_) {
     next(new InternalServerError());
   }
