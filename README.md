@@ -1,157 +1,102 @@
-# server
+# clip-master
 
-Template for express, typescript, zod projects.
+## Overview
+`clip-master` is an application that offers REST APIs for managing video files, including features for uploading, trimming, merging, and sharing videos.
 
-# Glossary
+## Getting Started
 
-- ## Absolute imports
+These instructions will help you set up the project on your local machine for development and testing purposes.
 
-  non-library imports that use absolute path instead of relative.
+### Prerequisites
+- Node.js (v18 or higher)
+- Yarn (v1.22 or higher)
 
-  for ex:
+## Features
+- User Authentication
+- Admin Management
+- Video Upload
+- Video Trimming
+- Video Merging
+- Video Download
 
-  ```
-  .
-  ├── apps
-  │   └── server.ts
-  ├── env
-  │   └── index.ts
-  ├── folder1
-  │   └── folder2
-  │       └── a.ts
-  ├── index.ts
-  └── middlewares
-      └── logger.middleware.ts
-  ```
+## Technologies Used
+- Node.js
+- Express.js
+- TypeScript
+- SQLite (via Prisma ORM)
+- fluent-ffmpeg for video processing
+- Swagger for API Documentation
 
-  ```typescript
-  // folder1/folder2/a.ts
+### Installation
 
-  // this is a relative import
-  import { getEnv } from '../../env/index.ts';
+1. Clone the repository:
 
-  // this is an absolute import
-  import { getEnv } from 'env/index.ts';
-  ```
+    ```bash
+    git clone https://github.com/probablyarth/clip-master.git
+    cd clip-master
+    ```
 
-# Features
+2. Install the dependencies:
 
-- support for [absolute imports](#absolute-imports) in both development and build using `tscpaths` and `tsconfig-paths`
-- `zod` for validating `.env` vars.
-- `dotenv` for parsing `.env` files.
-- `morgan` for logging.
-- `jest` and `supertest` for tests.
-- `express` for http server.
-- `prettier` for formatting.
-- `eslint` for linting and forcing code styles.
+    ```bash
+    yarn
+    ```
 
-# How-to(s)
+3. Set up the database:
 
-- ## How to use absolute imports
+    ```bash
+    npx prisma migrate dev
+    ```
 
-  Absolute imports are not resolved by the default typescript build tool, `tscpaths` takes care of it.
+4. Copy environment variables to .env:
 
-  if you want to create imports from a folder let's say `src/folder1` and name it `folder1`
+    ```bash
+    cp .env.example .env
+    ```
 
-  add this entry in the `tsconfig.json`
+### Running the Application
 
-  ```jsonc
-  {
-    //tsconfig.json
-    "compilerOptions": {
-      //...rest of the config
+1. Start the development server:
 
-      "paths": {
-        //..other paths
+    ```bash
+    yarn dev
+    ```
 
-        "folder1/*": ["folder1/*"],
-      },
-    },
-  }
-  ```
+2. The server will be running on `http://localhost:8000`.
 
-  you don't need to mention `src/folder1/*` because the `baseUrl` is set to `./src` which is changeable in the `tsconfig.json`
+### Linting:
 
-  ```jsonc
-  //tsconfig.json
-  {
-    "compilerOptions": {
-      "baseUrl": "./src", // <--change here
-    },
-  }
-  ```
+    To run the linter:  
 
-- ## How to add env vars to the pre-existing zod schema
+    ```bash
+    yarn lint    
+    ```
 
-  just add the key in the `envSchema` object in `./src/env/index.ts` and give it the value of `z.string()`
+### Running tests:
 
-  ```typescript
-  // ./src/env/index.ts
-  .
-  .
-  .
-  .
+1. To run the test suite:
+    
+    ```bash
+    yarn test
+    ```
 
-  const envSchema = z.object({
-    // other variables
-    yourKey: z.string(),
-  });
-  ```
+### Building for Production
 
-## setup
+1. Build the application:
 
-- Install the dependencies
+    ```bash
+    yarn build
+    ```
 
-  ```sh
-  npm i
-  ```
+2. Start the production server:
 
-- create a `.env` file from `.env.example`
+    ```bash
+    yarn start
+    ```
 
-  ```sh
-  cp .env.example .env
-  ```
+### API Documentation
 
-## Running the server
+The API documentation is available via Swagger UI. You can access it at: https://app.swaggerhub.com/apis/BINODLABS/clip_master/1.0.0
 
-- Follow the instructions mentioned in [setup](#setting-up)
-
-- for development server
-
-  ```sh
-  npm run dev
-  ```
-
-- for running production build
-
-  ```sh
-  npm run build && npm start
-  ```
-
-- using Docker
-
-  builidng docker image
-
-  ```sh
-  docker build -t <image_name> .
-  ```
-
-  running docker image
-
-  ```sh
-  docker run -e PORT=4000 -p 4000:4000 <image_name>
-
-  Note: PORT is an env variable
-  ```
-
-## Running tests
-
-```
-npm run test
-```
-
-## Linting
-
-```sh
-npm run lint
-```
+## LICENSE
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
